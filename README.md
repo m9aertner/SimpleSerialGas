@@ -44,7 +44,7 @@ Only three commands are available. Each command is terminated with a CR characte
 
 The reply, in all cases, is just the current counter value:
 
-- R:\<ID\>:\<counter value\>
+- C:\<ID\>:\<counter value\>
 
 Example session:
 
@@ -54,7 +54,7 @@ Example session:
     C:0:12345
     Q:0
     C:0:12345
-    ... one impulses coming in ...
+    ... one impulse coming in ...
     Q:0
     C:0:12346
     ... some more impulses coming in ...
@@ -79,7 +79,7 @@ to pull in the "command line" definition for the sensor, in a new dedicated file
     - sensor:
       name: "Serial Gas"
       unique_id : s11111111-xxxx-yyyy-zzzz
-      command: 'echo -e "Q:0\r" | tio -b 57600 /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0 --response-wait --response-timeout 3002 | cut -d: -f3'
+      command: 'tio -b 57600 /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0 --script "send(''Q:0\r''); expect(''\r'', 300); print(''''); exit(0)" --mute | cut -d: -f3'
       unit_of_measurement: "m³"
       value_template: "{{ value | multiply(0.01) | round(2) }}"
       scan_interval: 30
@@ -95,6 +95,14 @@ Note, to install "tio" and to find out which USB port your serial adapter uses, 
 
     # plug in USB connector, check for the newly added line ... that's the one you want to use for above tio command line command
     tio --list
+
+Update 2024-07-06: tio has changed commmand line options in version 2.8 and later, see https://github.com/tio/tio. Changing the `command:` to the following worked for me, using the new LUA script facility. Of coutse, the "cut" could be done in LUA, too, but that's not a crucial point. Note that in the YAML file, one needs to escape single quotes by doubling them.
+
+      # tio 3.3
+      tio -b 57600 /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0 --script "send('Q:0\r'); expect('\r', 1000); print(''); exit(0)" --mute | cut -d: -f3
+
+      # tio <= 2.7
+      echo -e "Q:0\r" | tio -b 57600 /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0 --response-wait --response-timeout 300 | cut -d: -f3
 
 # Hardware
 
